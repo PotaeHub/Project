@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id          String       @id @default(cuid())
+  username    String
+  email       String       @unique
+  password    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  courses     Course[] // คอร์สที่ user สร้าง
+  enrollments Enrollment[] // คอร์สที่ user ลงทะเบียนเรียน
+  orders      Order[] // Orders ของ user
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  thumbnail   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+  enrollments Enrollment[]
+  sections    Section[]
+  orderItems  OrderItem[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  courses     Course[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  status     OrderStatus
+  totalPrice Float
+  orderDate  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id       String @id @default(cuid())
+  price    Float
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id])
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+}
+
+model Section {
+  id        String   @id @default(cuid())
+  title     String
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id])
+  enrolledAt DateTime @default(now())
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
