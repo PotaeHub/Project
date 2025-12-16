@@ -10,88 +10,197 @@ generator client {
 
 datasource db {
   provider = "mysql"
-    url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-
-model User {
-  id          String       @id @default(cuid())
-  username    String
-  email       String       @unique
-  password    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  courses     Course[] // คอร์สที่ user สร้าง
-  enrollments Enrollment[] // คอร์สที่ user ลงทะเบียนเรียน
-  orders      Order[] // Orders ของ user
+// ==================== ENUM ====================
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
 }
 
-model Course {
-  id          String       @id @default(cuid())
-  title       String
-  description String
-  price       Float
-  thumbnail   String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userId      String
-  user        User         @relation(fields: [userId], references: [id])
-  categoryId  String
-  category    Category     @relation(fields: [categoryId], references: [id])
-  enrollments Enrollment[]
-  sections    Section[]
-  orderItems  OrderItem[]
+enum CourseType {
+  GENERAL
+  POPULAR
+  PACKAGE
 }
 
-model Category {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  courses     Course[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Order {
-  id         String      @id @default(cuid())
-  status     OrderStatus
-  totalPrice Float
-  orderDate  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  userId     String
-  user       User        @relation(fields: [userId], references: [id])
-  orderItems OrderItem[]
-}
-
-model OrderItem {
-  id       String @id @default(cuid())
-  price    Float
-  orderId  String
-  order    Order  @relation(fields: [orderId], references: [id])
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id])
-}
-
-model Section {
-  id        String   @id @default(cuid())
-  title     String
-  courseId  String
-  course    Course   @relation(fields: [courseId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Enrollment {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  courseId   String
-  course     Course   @relation(fields: [courseId], references: [id])
-  enrolledAt DateTime @default(now())
-}
-
-enum OrderStatus {
+enum PaymentStatus {
   PENDING
   COMPLETED
-  CANCELLED
+  FAILED
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  COMPLETED
+  DROPPED
+}
+
+// ==================== USER ====================
+model User {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Profiles
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+  adminProfile   AdminProfile?
+
+  // Relations
+  coursesTaught Course[]     @relation("TeacherCourses")
+  enrollments   Enrollment[]
+  payments      Payment[]
+  reviews       Review[]
+  progress      Progress[]
+}
+
+// ==================== STUDENT PROFILE ====================
+model StudentProfile {
+  id         BigInt  @id @default(autoincrement())
+  userId     BigInt  @unique
+  gradeLevel String?
+  classroom  String?
+  phone      String?
+  image      String?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ==================== TEACHER PROFILE ====================
+model TeacherProfile {
+  id         BigInt  @id @default(autoincrement())
+  userId     BigInt  @unique
+  subject    String?
+  experience Int?
+  phone      String?
+  image      String?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ==================== ADMIN PROFILE ====================
+model AdminProfile {
+  id       BigInt  @id @default(autoincrement())
+  userId   BigInt  @unique
+  position String?
+  phone    String?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ==================== CATEGORY ====================
+model Category {
+  id   BigInt @id @default(autoincrement())
+  name String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courses Course[]
+}
+
+// ==================== COURSE ====================
+model Course {
+  id        BigInt  @id @default(autoincrement())
+  teacher   User?   @relation("TeacherCourses", fields: [teacherId], references: [id])
+  teacherId BigInt?
+
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId BigInt?
+
+  title       String
+  description String?
+  image       String?
+  price       Float
+  type        CourseType?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  lessons     Lesson[]
+  enrollments Enrollment[]
+  payments    Payment[]
+  reviews     Review[]
+}
+
+// ==================== LESSON ====================
+model Lesson {
+  id       BigInt @id @default(autoincrement())
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId BigInt
+
+  title    String
+  content  String
+  videoUrl String?
+
+  sortOrder Int //  ลำดับบทเรียน
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  progress Progress[]
+}
+
+// ==================== ENROLLMENT ====================
+model Enrollment {
+  id     BigInt @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId BigInt
+
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   BigInt
+  status     String
+  enrolledAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+// ==================== PAYMENT ====================
+model Payment {
+  id     BigInt @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId BigInt
+
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId BigInt
+
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  paymentDate   DateTime      @default(now())
+}
+
+// ==================== REVIEW ====================
+model Review {
+  id     BigInt @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId BigInt
+
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId BigInt
+
+  rating  Int
+  comment String?
+
+  createdAt DateTime @default(now())
+}
+
+// ==================== PROGRESS ====================
+model Progress {
+  id     BigInt @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId BigInt
+
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  lessonId BigInt
+
+  isDone    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
 }

@@ -1,1 +1,15 @@
-@import 'tailwindcss' 
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thaana:wght@100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+@import "tailwindcss";
+
+
+@layer base {
+    :root {
+        --font-roboto: "Roboto", sans-serif;
+        --font-noto: "Noto Sans Thaana", sans-serif;
+    }
+
+    * {
+        font-family: var(--font-roboto);
+    }
+}

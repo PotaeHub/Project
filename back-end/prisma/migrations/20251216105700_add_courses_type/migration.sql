@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `course` MODIFY `type` ENUM('GENERAL', 'POPULAR', 'PACKAGE') NULL;
