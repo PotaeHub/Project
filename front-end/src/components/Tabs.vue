@@ -1,14 +1,17 @@
+<script setup>
+const props = defineProps({
+    tabs: Array,
+    activeTab: String
+})
+
+const emit = defineEmits(['update:activeTab'])
+</script>
+
 <template>
-
-    <button v-for="tab in ['detail', 'list', 'payment']" :key="tab" @click="activeTab = tab"
-        class="py-4 font-semibold border-b-4 transition" :class="activeTab === tab
-            ? 'border-green-600 text-green-700'
-            : 'border-transparent text-gray-500'">
-        {{
-            tab === 'detail' ? 'รายละเอียด' :
-                tab === 'list' ? 'รายการในแพ็กเกจ' :
-                    'วิธีการชำระเงิน'
-        }}
-    </button>
-
+    <div class="flex gap-10 ">
+        <button v-for="tab in tabs" :key="tab" @click="$emit('update:activeTab', tab)"
+            :class="activeTab === tab ? 'text-green-600 border-b-2' : 'text-gray-600'">
+            {{ tab }}
+        </button>
+    </div>
 </template>

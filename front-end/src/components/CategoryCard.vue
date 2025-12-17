@@ -23,8 +23,7 @@ const getIconKey = (name) => {
 </script>
 
 <template>
-    <div @click="emit('select', category)"
-        class="min-w-[120px] flex flex-col items-center cursor-pointer transition "
+    <div @click="emit('select', category)" class="min-w-[120px] flex flex-col items-center cursor-pointer transition "
         :class="active ? 'scale-105' : 'hover:-translate-y-1'">
         <div class="w-20 h-20 rounded-full flex items-center justify-center transition"
             :class="active ? 'bg-violet-600' : 'bg-violet-100 hover:bg-violet-200'">
